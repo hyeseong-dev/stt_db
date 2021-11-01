@@ -2,8 +2,9 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+
 class Channel(BaseModel):
-    date: str
+    date: datetime
     server_id: str
     ch_total : int
     ch_grpc : int 

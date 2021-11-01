@@ -18,3 +18,6 @@ SQLAlchemy
 starlette
 typing-extensions
 uvicorn
+pytz
+fastapi-utils
+fastapi-jinja
