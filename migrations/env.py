@@ -1,5 +1,5 @@
 import os
-import models
+from project import models
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config

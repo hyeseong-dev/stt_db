@@ -8,21 +8,24 @@ services:
       - 5434:5432
     expose:
       - 5434
+    env_file:
+      - .env/.dev-sample
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=stt
       - TZ=Asia/Seoul
     networks:
       - stt_network
     volumes:
       - stt_db_data:/var/lib/postgresql/data/
-    env_file:
-      - .env
 
   db_controler:
     container_name: stt_db_controler
-    build: .
+    build: 
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: stt_db_controler
     command: bash -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload && alembic upgrade"
     volumes:
       - .:/app
@@ -33,10 +36,7 @@ services:
     networks:
       - stt_network
     env_file:
-      - .env
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - .env/.dev-sample
     depends_on:
       - db
 
@@ -44,9 +44,9 @@ services:
     container_name: stt_pgadmin
     image: dpage/pgadmin4
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
-      - PGADMIN_CONFIG_SERVER_MODE=${PGADMIN_CONFIG_SERVER_MODE}
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=True
     ports:
       - 6060:80
     depends_on:
@@ -54,66 +54,66 @@ services:
     networks:
       - stt_network
     env_file:
-      - .env
+      - .env/.dev-sample
     volumes:
       - stt_pgadmin_data:/var/lib/pgadmin 
 
-  # redis:
-  #   image: redis:6-alpine
-  #   container_name: stt_db_redis
-  #   networks:
-  #     - stt_network
+  redis:
+    image: redis:6-alpine
+    container_name: stt_db_redis
+    networks:
+      - stt_network
 
-  # celery_worker:
-  #   build:
-  #     context: .
-  #     dockerfile: ./compose/local/django/Dockerfile
-  #   command: /start-celeryworker
-  #   volumes:
-  #     - .:/app
-  #   env_file:
-  #     - ./.env/.dev-sample
-  #   depends_on:
-  #     - redis
-  #     - db
-  #     - db_controler
-  #   container_name: stt_mnt_celery_worker
-  #   networks:
-  #     - stt_network
+  celery_worker:
+    container_name: stt_db_celery_worker
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    image: stt_db_celery_worker
+    command: /start-celeryworker
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    depends_on:
+      - redis
+      - db
+    networks:
+      - stt_network
 
-  # celery_beat:
-  #   build:
-  #     context: .
-  #     dockerfile: ./compose/local/django/Dockerfile
-  #   command: /start-celerybeat
-  #   volumes:
-  #     - .:/app
-  #   env_file:
-  #     - ./.env/.dev-sample
-  #   depends_on:
-  #     - redis
-  #     - db
-  #   container_name: stt_mnt_celery_beat
-  #   networks:
-  #     - stt_network
+  celery_beat:
+    container_name: stt_db_celery_beat
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    command: /start-celerybeat
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    depends_on:
+      - redis
+      - db
+    networks:
+      - stt_network
 
-  # flower:
-  #   build:
-  #     context: .
-  #     dockerfile: ./compose/local/django/Dockerfile
-  #   command: /start-flower
-  #   volumes:
-  #     - .:/app
-  #   env_file:
-  #     - ./.env/.dev-sample
-  #   ports:
-  #     - 55535:5555
-  #   depends_on:
-  #     - redis
-  #     - db
-  #   container_name: stt_mnt_celery_flower
-  #   networks:
-  #     - stt_network 
+  flower:
+    container_name: stt_db_celery_flower
+    build:
+      context: .
+      dockerfile: ./compose/local/fastapi/Dockerfile
+    command: /start-flower
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    ports:
+      - 55536:5555
+    depends_on:
+      - redis
+      - db
+    networks:
+      - stt_network 
   
 
 networks:
